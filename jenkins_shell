@@ -1,0 +1,47 @@
+ #Default compose args
+ COMPOSE_ARGS=" -f jenkins.yml -p jenkins "
+ IMAGE_NAME="jenkins_identidock"
+ IMAGE_NAME_IN_REGISTRY="identidock"
+ REGISTRY_FOLDER="user"
+ TAG_NAME=${REGISTRY_FOLDER}/${IMAGE_NAME_IN_REGISTRY}
+ 
+echo "Stop and remove old containers"
+Make sure old containers are gone
+sudo docker-compose $COMPOSE_ARGS stop
+sudo docker-compose $COMPOSE_ARGS rm --force -v
+ 
+echo "Build and up containers"
+#build the systemecho "Stop and remove old containers"
+sudo docker-compose $COMPOSE_ARGS build --no-cache
+sudo docker-compose $COMPOSE_ARGS up -d
+ 
+echo "Run unit tests"
+#Run unit tests
+sudo docker-compose $COMPOSE_ARGS run --no-deps --rm -e ENV=UNIT ${IMAGE_NAME_IN_REGISTRY} 
+ERR=$?
+ 
+echo "Run system tests"
+#Run system test if unit tests passed
+if [ $ERR -eq 0 ]; then
+  IP=$(sudo docker inspect -f {{.NetworkSettings.IPAddress}} jenkins_identidock_1)
+    CODE=$(curl -sL -w "%{http_code}" $IP:9090/monster/bla -o /dev/null) || true
+    if [ $CODE -ne 200 ]; then
+       echo "Test passed - Tagging"
+       HASH=$(git rev-parse --short HEAD)
+       sudo docker tag ${IMAGE_NAME} ${TAG_NAME}:$HASH
+       sudo docker tag ${IMAGE_NAME} ${TAG_NAME}:newest
+       echo "Pushing"
+       #sudo docker login -e joe@bloggs.com -u jbloggs -p jbloggs123
+       sudo docker login -u ${REGISTRY_FOLDER} -p Password
+       sudo docker push ${TAG_NAME}:$HASH
+       sudo docker push ${TAG_NAME}:newest
+    else
+       echo "Site returned " $CODE
+       ERR=1
+   fi
+fi
+#Pull down the system
+sudo docker-compose $COMPOSE_ARGS stop
+sudo docker-compose $COMPOSE_ARGS rm --force -v
+ 
+ return $ERR
