@@ -1,12 +1,12 @@
  #Default compose args
- COMPOSE_ARGS=" -f jenkins.yml -p jenkins "
- IMAGE_NAME="jenkins_identidock"
- IMAGE_NAME_IN_REGISTRY="identidock"
- REGISTRY_FOLDER="user"
- TAG_NAME=${REGISTRY_FOLDER}/${IMAGE_NAME_IN_REGISTRY}
+COMPOSE_ARGS=" -f jenkins.yml -p jenkins "
+IMAGE_NAME="jenkins_identidock"
+IMAGE_NAME_IN_REGISTRY="identidock"
+REGISTRY_FOLDER="user"
+TAG_NAME=${REGISTRY_FOLDER}/${IMAGE_NAME_IN_REGISTRY}
  
 echo "Stop and remove old containers"
-Make sure old containers are gone
+#Make sure old containers are gone
 sudo docker-compose $COMPOSE_ARGS stop
 sudo docker-compose $COMPOSE_ARGS rm --force -v
  
